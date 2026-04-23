@@ -19,6 +19,7 @@ function App() {
   const markersReleves = useRef([])
   const [clickedPoint, setClickedPoint] = useState(null)
   const [formData, setFormData] = useState({ categorie: 'observation', commentaire: '' })
+  const [geolocError, setGeolocError] = useState(null)
 
   const chargerReleves = async () => {
     const res = await fetch(`${API}/api/releves`)
@@ -59,6 +60,31 @@ function App() {
     })
   }
 
+  const placerMarqueur = (lng, lat) => {
+    if (markerRef.current) markerRef.current.remove()
+    markerRef.current = new maplibregl.Marker({ color: '#e74c3c' })
+      .setLngLat([lng, lat])
+      .addTo(map.current)
+    setClickedPoint({ lng, lat })
+    setFormData({ categorie: 'observation', commentaire: '' })
+  }
+
+  const handleGeoloc = () => {
+    setGeolocError(null)
+    if (!navigator.geolocation) {
+      setGeolocError('Géolocalisation non supportée par ce navigateur.')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { longitude, latitude } = pos.coords
+        map.current.flyTo({ center: [longitude, latitude], zoom: 16 })
+        placerMarqueur(longitude, latitude)
+      },
+      () => setGeolocError('Impossible d\'obtenir la position GPS.')
+    )
+  }
+
   useEffect(() => {
     if (map.current) return
 
@@ -69,24 +95,17 @@ function App() {
       zoom: 12
     })
 
-    map.current.on('load', () => {
-      chargerReleves()
-    })
+    map.current.on('load', () => chargerReleves())
 
     map.current.on('click', (e) => {
       const { lng, lat } = e.lngLat
-      if (markerRef.current) markerRef.current.remove()
-      markerRef.current = new maplibregl.Marker({ color: '#e74c3c' })
-        .setLngLat([lng, lat])
-        .addTo(map.current)
-      setClickedPoint({ lng, lat })
-      setFormData({ categorie: 'observation', commentaire: '' })
+      placerMarqueur(lng, lat)
     })
   }, [])
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`${API}/api/releves`, {
+      await fetch(`${API}/api/releves`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -96,7 +115,6 @@ function App() {
           commentaire: formData.commentaire
         })
       })
-      await response.json()
       setClickedPoint(null)
       if (markerRef.current) markerRef.current.remove()
       chargerReleves()
@@ -109,6 +127,45 @@ function App() {
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
 
+      {/* Bouton Ma position */}
+      <button
+        onClick={handleGeoloc}
+        style={{
+          position: 'absolute',
+          bottom: 40,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: '12px 24px',
+          background: '#2c3e50',
+          color: 'white',
+          border: 'none',
+          borderRadius: '24px',
+          fontSize: '14px',
+          cursor: 'pointer',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          zIndex: 10
+        }}
+      >
+        📍 Ma position
+      </button>
+
+      {geolocError && (
+        <div style={{
+          position: 'absolute',
+          bottom: 100,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#e74c3c',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          fontSize: '13px'
+        }}>
+          {geolocError}
+        </div>
+      )}
+
+      {/* Formulaire nouveau relevé */}
       {clickedPoint && (
         <div style={{
           position: 'absolute',
