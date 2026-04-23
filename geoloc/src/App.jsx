@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
-const API = ''
+const API = '/geoloc'
 
 const AUTEURS = [
   'Sophie Martin', 'Thomas Dupont', 'Julie Bernard', 'Marc Leblanc',
