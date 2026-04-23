@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
-const API = 'http://localhost:5010'
+const API = ''
 
 const AUTEURS = [
   'Sophie Martin', 'Thomas Dupont', 'Julie Bernard', 'Marc Leblanc',
@@ -132,6 +132,29 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (map.current) return
+
+    map.current = new maplibregl.Map({
+      container: mapContainer.current,
+      style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+      center: [2.3488, 48.8534],
+      zoom: 12
+    })
+
+    map.current.on('load', () => {
+      chargerReleves()
+
+      map.current.on('click', (e) => {
+        const { lng, lat } = e.lngLat
+        placerMarqueur(lng, lat)
+      })
+    })
+
+    const interval = setInterval(() => chargerReleves(), 30000)
+    return () => clearInterval(interval)
+  }, [])
+
   const placerMarqueur = (lng, lat) => {
     if (markerRef.current) markerRef.current.remove()
     markerRef.current = new maplibregl.Marker({ color: '#2c3e50' })
@@ -157,24 +180,7 @@ function App() {
     )
   }
 
-  useEffect(() => {
-    if (map.current) return
-    map.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-      center: [2.3488, 48.8534],
-      zoom: 12
-    })
-    map.current.on('load', () => chargerReleves())
-
-    const interval = setInterval(() => chargerReleves(), 30000)
-    return () => clearInterval(interval)
-    
-    map.current.on('click', (e) => {
-      const { lng, lat } = e.lngLat
-      placerMarqueur(lng, lat)
-    })
-  }, [])
+  
 
   const handleSubmit = async () => {
     const fd = new FormData()
