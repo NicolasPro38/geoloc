@@ -10,3 +10,4 @@ geoloc/dist/
 
 # OS
 .DS_Store
+geoloc/node_modules/
