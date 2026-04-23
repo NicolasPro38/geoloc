@@ -4,12 +4,21 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 
 const API = 'http://localhost:5010'
 
-const COULEURS = {
-  observation: '#3498db',
-  anomalie: '#e74c3c',
-  infrastructure: '#f39c12',
-  vegetation: '#2ecc71',
-  autre: '#9b59b6'
+const CATEGORIES = {
+  observation: { label: 'Observation', couleur: '#3498db' },
+  anomalie: { label: 'Anomalie', couleur: '#e74c3c' },
+  infrastructure: { label: 'Infrastructure', couleur: '#f39c12' },
+  vegetation: { label: 'Végétation', couleur: '#2ecc71' },
+  autre: { label: 'Autre', couleur: '#9b59b6' }
+}
+
+const styles = {
+  panel: {
+    position: 'absolute',
+    background: '#ffffff',
+    borderRadius: '6px',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+  }
 }
 
 function App() {
@@ -31,24 +40,28 @@ function App() {
     geojson.features.forEach(feature => {
       const { categorie, commentaire, created_at } = feature.properties
       const [lng, lat] = feature.geometry.coordinates
+      const couleur = CATEGORIES[categorie]?.couleur || '#999'
 
       const el = document.createElement('div')
-      el.style.width = '14px'
-      el.style.height = '14px'
-      el.style.borderRadius = '50%'
-      el.style.background = COULEURS[categorie] || '#999'
-      el.style.border = '2px solid white'
-      el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)'
-      el.style.cursor = 'pointer'
+      el.style.cssText = `
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        background: ${couleur};
+        border: 2px solid white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        cursor: pointer;
+      `
       el.addEventListener('click', (e) => {
         e.stopPropagation()
         marker.togglePopup()
       })
 
-      const popup = new maplibregl.Popup({ offset: 12 }).setHTML(`
-        <strong>${categorie}</strong><br/>
-        ${commentaire}<br/>
-        <small>${new Date(created_at).toLocaleString('fr-FR')}</small>
+      const popup = new maplibregl.Popup({ offset: 12, className: 'geoloc-popup' }).setHTML(`
+        <div style="font-family: system-ui; font-size: 13px; min-width: 160px;">
+          <div style="font-weight: 600; color: ${couleur}; margin-bottom: 4px; text-transform: capitalize;">${categorie}</div>
+          <div style="color: #333; margin-bottom: 6px;">${commentaire || '—'}</div>
+          <div style="color: #999; font-size: 11px;">${new Date(created_at).toLocaleString('fr-FR')}</div>
+        </div>
       `)
 
       const marker = new maplibregl.Marker({ element: el })
@@ -62,7 +75,7 @@ function App() {
 
   const placerMarqueur = (lng, lat) => {
     if (markerRef.current) markerRef.current.remove()
-    markerRef.current = new maplibregl.Marker({ color: '#e74c3c' })
+    markerRef.current = new maplibregl.Marker({ color: '#2c3e50' })
       .setLngLat([lng, lat])
       .addTo(map.current)
     setClickedPoint({ lng, lat })
@@ -72,7 +85,7 @@ function App() {
   const handleGeoloc = () => {
     setGeolocError(null)
     if (!navigator.geolocation) {
-      setGeolocError('Géolocalisation non supportée par ce navigateur.')
+      setGeolocError('Géolocalisation non supportée.')
       return
     }
     navigator.geolocation.getCurrentPosition(
@@ -81,22 +94,19 @@ function App() {
         map.current.flyTo({ center: [longitude, latitude], zoom: 16 })
         placerMarqueur(longitude, latitude)
       },
-      () => setGeolocError('Impossible d\'obtenir la position GPS.')
+      () => setGeolocError('Position GPS indisponible.')
     )
   }
 
   useEffect(() => {
     if (map.current) return
-
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
       center: [2.3488, 48.8534],
       zoom: 12
     })
-
     map.current.on('load', () => chargerReleves())
-
     map.current.on('click', (e) => {
       const { lng, lat } = e.lngLat
       placerMarqueur(lng, lat)
@@ -108,12 +118,7 @@ function App() {
       await fetch(`${API}/api/releves`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lat: clickedPoint.lat,
-          lng: clickedPoint.lng,
-          categorie: formData.categorie,
-          commentaire: formData.commentaire
-        })
+        body: JSON.stringify({ ...formData, lat: clickedPoint.lat, lng: clickedPoint.lng })
       })
       setClickedPoint(null)
       if (markerRef.current) markerRef.current.remove()
@@ -124,91 +129,118 @@ function App() {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', fontFamily: 'system-ui, sans-serif' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
 
+      {/* Titre */}
+      <div style={{ ...styles.panel, top: 16, left: 16, padding: '10px 16px' }}>
+        <div style={{ fontSize: '15px', fontWeight: '700', color: '#1a1a2e', letterSpacing: '0.3px' }}>
+          GeoLoc
+        </div>
+        <div style={{ fontSize: '11px', color: '#888', marginTop: '2px', marginBottom: '8px' }}>
+          Relevés terrain collaboratifs
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+          <a href="https://cartonicolasrey.duckdns.org/portfolio/" target="_blank" rel="noreferrer"
+            style={{ fontSize: '11px', color: '#3498db', textDecoration: 'none' }}>
+            🌐 Portfolio
+          </a>
+          <a href="https://github.com/NicolasPro38/geoloc" target="_blank" rel="noreferrer"
+            style={{ fontSize: '11px', color: '#3498db', textDecoration: 'none' }}>
+            ⌥ GitHub
+          </a>
+        </div>
+      </div>
+
+      {/* Légende */}
+      <div style={{ ...styles.panel, bottom: 32, left: 16, padding: '12px 16px' }}>
+        <div style={{ fontSize: '11px', fontWeight: '600', color: '#555', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Catégories
+        </div>
+        {Object.entries(CATEGORIES).map(([key, { label, couleur }]) => (
+          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: couleur, border: '1.5px solid white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', flexShrink: 0 }} />
+            <span style={{ fontSize: '12px', color: '#333' }}>{label}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Bouton Ma position */}
-      <button
-        onClick={handleGeoloc}
-        style={{
-          position: 'absolute',
-          bottom: 40,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          padding: '12px 24px',
-          background: '#2c3e50',
-          color: 'white',
-          border: 'none',
-          borderRadius: '24px',
-          fontSize: '14px',
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-          zIndex: 10
-        }}
-      >
+      <button onClick={handleGeoloc} style={{
+        position: 'absolute',
+        bottom: 32,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        padding: '10px 22px',
+        background: '#1a1a2e',
+        color: 'white',
+        border: 'none',
+        borderRadius: '20px',
+        fontSize: '13px',
+        fontWeight: '500',
+        cursor: 'pointer',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+        letterSpacing: '0.3px',
+        zIndex: 10
+      }}>
         📍 Ma position
       </button>
 
       {geolocError && (
         <div style={{
-          position: 'absolute',
-          bottom: 100,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: '#e74c3c',
-          color: 'white',
-          padding: '8px 16px',
-          borderRadius: '8px',
-          fontSize: '13px'
+          position: 'absolute', bottom: 90, left: '50%', transform: 'translateX(-50%)',
+          background: '#e74c3c', color: 'white', padding: '8px 16px',
+          borderRadius: '6px', fontSize: '12px', whiteSpace: 'nowrap'
         }}>
           {geolocError}
         </div>
       )}
 
-      {/* Formulaire nouveau relevé */}
+      {/* Formulaire */}
       {clickedPoint && (
-        <div style={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-          background: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-          width: '280px'
-        }}>
-          <h3 style={{ margin: '0 0 12px 0' }}>Nouveau relevé</h3>
-          <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#666' }}>
+        <div style={{ ...styles.panel, top: 16, right: 16, padding: '20px', width: '280px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a2e', marginBottom: '4px' }}>
+            Nouveau relevé
+          </div>
+          <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '16px', fontFamily: 'monospace' }}>
             {clickedPoint.lat.toFixed(5)}, {clickedPoint.lng.toFixed(5)}
-          </p>
+          </div>
 
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>Catégorie</label>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#555', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Catégorie
+          </label>
           <select
             value={formData.categorie}
             onChange={(e) => setFormData({ ...formData, categorie: e.target.value })}
-            style={{ width: '100%', marginBottom: '12px', padding: '6px' }}
+            style={{ width: '100%', marginBottom: '14px', padding: '8px', border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '13px', background: '#fafafa' }}
           >
-            <option value="observation">Observation</option>
-            <option value="anomalie">Anomalie</option>
-            <option value="infrastructure">Infrastructure</option>
-            <option value="vegetation">Végétation</option>
-            <option value="autre">Autre</option>
+            {Object.entries(CATEGORIES).map(([key, { label }]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
           </select>
 
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>Commentaire</label>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#555', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Commentaire
+          </label>
           <textarea
             value={formData.commentaire}
             onChange={(e) => setFormData({ ...formData, commentaire: e.target.value })}
             rows={3}
-            style={{ width: '100%', marginBottom: '12px', padding: '6px', boxSizing: 'border-box' }}
+            style={{ width: '100%', marginBottom: '16px', padding: '8px', border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '13px', boxSizing: 'border-box', resize: 'none', background: '#fafafa' }}
             placeholder="Décris ce que tu observes..."
           />
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={handleSubmit} style={{ flex: 1, padding: '8px', background: '#2ecc71', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+            <button onClick={handleSubmit} style={{
+              flex: 1, padding: '9px', background: '#1a1a2e', color: 'white',
+              border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: '500', cursor: 'pointer'
+            }}>
               Enregistrer
             </button>
-            <button onClick={() => setClickedPoint(null)} style={{ flex: 1, padding: '8px', cursor: 'pointer' }}>
+            <button onClick={() => { setClickedPoint(null); if (markerRef.current) markerRef.current.remove() }} style={{
+              flex: 1, padding: '9px', background: '#f5f5f5', color: '#555',
+              border: '1px solid #e0e0e0', borderRadius: '4px', fontSize: '13px', cursor: 'pointer'
+            }}>
               Annuler
             </button>
           </div>
