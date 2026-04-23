@@ -112,5 +112,15 @@ def add_releve():
 
     return jsonify({ 'success': True, 'id': new_id }), 201
 
+@app.route('/api/releves/<int:id>', methods=['DELETE'])
+def delete_releve(id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM releves WHERE id = %s", (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({ 'success': True })
+
 if __name__ == '__main__':
     app.run(debug=True, port=5010)

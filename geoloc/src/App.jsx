@@ -11,11 +11,13 @@ const AUTEURS = [
 ]
 
 const CATEGORIES = {
-  observation: { label: 'Observation', couleur: '#3498db' },
-  anomalie: { label: 'Anomalie', couleur: '#e74c3c' },
-  infrastructure: { label: 'Infrastructure', couleur: '#f39c12' },
-  vegetation: { label: 'Végétation', couleur: '#2ecc71' },
-  autre: { label: 'Autre', couleur: '#9b59b6' }
+  faune: { label: 'Faune', couleur: '#e74c3c' },
+  flore: { label: 'Flore', couleur: '#2ecc71' },
+  habitat: { label: 'Habitat', couleur: '#f39c12' },
+  pollution: { label: 'Pollution', couleur: '#8e44ad' },
+  hydrologie: { label: 'Hydrologie', couleur: '#3498db' },
+  sol: { label: 'Sol / Géologie', couleur: '#a0522d' },
+  autre: { label: 'Autre', couleur: '#95a5a6' }
 }
 
 const styles = {
@@ -73,7 +75,7 @@ function App() {
     markersReleves.current = []
 
     geojson.features.forEach(feature => {
-      const { categorie, commentaire, auteur, meteo, photos, created_at } = feature.properties
+      const { id, categorie, commentaire, auteur, meteo, photos, created_at } = feature.properties
       const [lng, lat] = feature.geometry.coordinates
       const couleur = CATEGORIES[categorie]?.couleur || '#999'
 
@@ -102,8 +104,14 @@ function App() {
             ${auteur || '—'} · ${new Date(created_at).toLocaleString('fr-FR')}
           </div>
           <div style="color: #333; margin-bottom: 8px;">${commentaire || '—'}</div>
-          <div style="font-size: 11px; color: #666;">${formatMeteo(meteo)}</div>
+          <div style="font-size: 11px; color: #666; margin-bottom: 8px;">${formatMeteo(meteo)}</div>
           ${photosHtml}
+          <button onclick="window.supprimerReleve(${id})" style="
+            margin-top: 10px; width: 100%; padding: 6px;
+            background: #fff0f0; color: #e74c3c;
+            border: 1px solid #e74c3c; border-radius: 4px;
+            font-size: 12px; cursor: pointer;
+          ">🗑 Supprimer ce relevé</button>
         </div>
       `)
 
@@ -115,6 +123,14 @@ function App() {
       markersReleves.current.push(marker)
     })
   }
+
+  useEffect(() => {
+    window.supprimerReleve = async (id) => {
+      if (!window.confirm('Supprimer ce relevé ?')) return
+      await fetch(`${API}/api/releves/${id}`, { method: 'DELETE' })
+      chargerReleves()
+    }
+  }, [])
 
   const placerMarqueur = (lng, lat) => {
     if (markerRef.current) markerRef.current.remove()
@@ -150,6 +166,10 @@ function App() {
       zoom: 12
     })
     map.current.on('load', () => chargerReleves())
+
+    const interval = setInterval(() => chargerReleves(), 30000)
+    return () => clearInterval(interval)
+    
     map.current.on('click', (e) => {
       const { lng, lat } = e.lngLat
       placerMarqueur(lng, lat)
