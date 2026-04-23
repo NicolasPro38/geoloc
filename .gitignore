@@ -1,0 +1,12 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+
+# Node
+geoloc/node_modules/
+geoloc/dist/
+
+# OS
+.DS_Store
