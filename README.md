@@ -56,7 +56,7 @@ https://votre-domaine.fr/geoloc/
 **Limite** : nécessite un serveur exposé sur internet et un nom de domaine.
 
 > Pour une démonstration publique, l'application est accessible à l'adresse :
-> **https://cartonicolasrey.duckdns.org/geoloc/**
+> **https://cartonicolasreyromano.fr/geoloc/**
 
 ---
 
@@ -152,4 +152,4 @@ L'application peut être ajoutée à l'écran d'accueil de la tablette via le me
 Nicolas Rey Romano — Géographe / Cartographe / Géomaticien
 Projet portfolio — non commercial
 
-[Portfolio](https://cartonicolasrey.duckdns.org/portfolio/) · [LinkedIn](https://www.linkedin.com/in/nicolas-rey-5898b3116/)
+[Portfolio](https://cartonicolasreyromano.fr/portfolio/) · [LinkedIn](https://www.linkedin.com/in/nicolas-rey-5898b3116/)

@@ -212,7 +212,7 @@ function App() {
         <div style={{ fontSize: '15px', fontWeight: '700', color: '#1a1a2e', letterSpacing: '0.3px' }}>GeoLoc</div>
         <div style={{ fontSize: '11px', color: '#888', marginTop: '2px', marginBottom: '8px' }}>Relevés terrain collaboratifs</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          <a href="https://cartonicolasrey.duckdns.org/portfolio/" target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: '#3498db', textDecoration: 'none' }}>🌐 Portfolio</a>
+          <a href="https://cartonicolasreyromano.fr/portfolio/" target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: '#3498db', textDecoration: 'none' }}>🌐 Portfolio</a>
           <a href="https://github.com/NicolasPro38/geoloc" target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: '#3498db', textDecoration: 'none' }}>⌥ GitHub</a>
         </div>
       </div>
