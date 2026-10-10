@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: geoloc
       POSTGRES_USER: geoloc
-      POSTGRES_PASSWORD: geoloc2024
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?definir POSTGRES_PASSWORD dans .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -27,7 +27,7 @@ services:
       DB_HOST: db
       DB_NAME: geoloc
       DB_USER: geoloc
-      DB_PASSWORD: geoloc2024
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?definir POSTGRES_PASSWORD dans .env}
       DB_PORT: 5432
     volumes:
       - uploads_data:/app/uploads
